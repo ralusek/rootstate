@@ -1,0 +1,23 @@
+{
+  "name": "rootstate",
+  "version": "0.0.0",
+  "description": "Immutable state management.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "state",
+    "management",
+    "tree",
+    "store",
+    "root",
+    "branch",
+    "redux"
+  ],
+  "author": "Tomas Savigliano",
+  "license": "ISC",
+  "dependencies": {
+    "seamless-immutable": "^7.1.2"
+  }
+}
