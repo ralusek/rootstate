@@ -28,6 +28,10 @@ class RootState {
     config = config || {};
     p(this).useChangeLog = config.useChangeLog === true;
 
+    // This serves as the basis for any path. Used for creating views into
+    // specific parts of the data.
+    if (config.basis) p(this).basis = config.basis;
+
     // Allow path to be provided to serve as default path for stateModifiers.
     if (config.path) p(this).path = config.path;
 
@@ -54,13 +58,6 @@ class RootState {
     // This is a flag to allow the call of a Meta Dispatch event, i.e. a
     // dispatch that an EVENT.DISPATCH occurred.
     p(this).canMetaDispatch = false;
-
-    // Here we keep a tree structure of paths being used by modifiers and child
-    // branches in order to check for conflicts when registering new of either.
-    p(this).conflictTree = Object.freeze({
-      modifiers: {},
-      branches: {}
-    });
   }
   
 
@@ -149,18 +146,11 @@ class RootState {
     path = path || p(this).path;
     if (!path) throw new Error('RootState cannot addStateModifier without a provided path.');
 
-    // TODO replace this with more flexible read-time conflict checking.
-    const higherTierBranchLeaf = findConflictingLeaf(p(this).conflictTree.branches, path.split(/\.+/));
-    if (higherTierBranchLeaf) throw new Error(`RootState cannot addAsBrach, cannot add a branch at or beneath an existing branched RootState. Conflict at: ${higherTierBranchLeaf.path.join('.')}`);
-
     const stateModifiers = p(this).stateModifiers[eventName] = (p(this).stateModifiers[eventName] || {});
     if (stateModifiers[path]) throw new Error(`Cannot register two State Modifiers for the same eventName and path: ${eventName}: ${path}`);
     stateModifiers[path] = fn;
 
     p(this).stateModifierPathMap.set(fn, path);
-
-    // Register path as reserved. (For conflict aversion with child branch states).
-    utils._set(p(this).conflictTree.modifiers, path, {leaf: true});
   }
 
 
@@ -178,47 +168,9 @@ class RootState {
   getChangeLog() {
     return p(this).changeLog.slice();
   }
-
-
-  /**
-   *
-   */
-  addAsBranch(path, rootState) {
-    const splitPath = path.split(/\.+/);
-
-    // TODO replace this with more flexible read-time conflict checking.
-    const higherTierBranchLeaf = findConflictingLeaf(p(this).conflictTree.branches, splitPath);
-    if (higherTierBranchLeaf) throw new Error(`RootState cannot addAsBrach, cannot add a branch at or beneath an existing branched RootState. Conflict at: ${higherTierBranchLeaf.path.join('.')}`);
-    const higherTierModifierLeaf = findConflictingLeaf(p(this).conflictTree.modifiers, splitPath);
-    if (higherTierModifierLeaf) throw new Error(`RootState cannot addAsBranch, cannot add a branch at or beneath an existing path affected by a modifier. Conflict at: ${higherTierModifierLeaf.path.join('.')}`)
-
-    // Register path as reserved.
-    utils._set(p(this).conflictTree.branches, path, {leaf: true});
-
-    rootState.on(RootState.EVENT.DISPATCH, (meta) => {
-      // Transfer child state to parent state.
-      p(this).state = Immutable.setIn(p(this).state, splitPath, rootState.getState());
-
-      // Transfer child logs if applicable.
-      if (p(this).useChangeLog) {
-        meta.changes.forEach(change => {
-          p(this).changeLog.push(Immutable(Object.assign({}, change, {fromBranch: path})));
-        });
-      }
-      // Propagate event upwards.
-      this.dispatch(meta.eventName, meta.payload);
-    });
-  }
 }
 
-function findConflictingLeaf(tree, splitPath) {
-  for (let i = splitPath.length; i > 1; i--) {
-    const path = splitPath.slice(0, i);
-    const test = Immutable.getIn(tree, path);
-    if (test && test.leaf) return {path};
-  }
-  return false;
-}
+
 
 
 // Add Built-in Event names as constant.
