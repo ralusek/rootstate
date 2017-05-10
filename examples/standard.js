@@ -1,10 +1,10 @@
 'use strict';
 
 const RootState = require('../');
-const rootState = new RootState();
+const rootState = new RootState({useChangeLog: true});
 
 // This is an example of me doing a reducer (i.e. "event handlers")
-rootState.addStateModifier('USER_CREATED', 'data.users', (oldBranch, payload) => {
+rootState.addStateModifier('data.users', 'USER_CREATED', (oldBranch, payload) => {
   return (oldBranch || []).concat([payload]);
 });
 

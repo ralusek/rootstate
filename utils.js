@@ -34,21 +34,22 @@ module.exports._get = function(obj, path, _default) {
 
 
 
-// /**
-//  * Mutably Set the value at the provided path.
-//  */
-// module.exports._set = function(obj, path, value) {
-//   obj = _isNil(obj) ? {} : obj;
+/**
+ * Mutably Set the value at the provided path. This is not to be used with
+ * anything related to state.
+ */
+module.exports._set = function(obj, path, value) {
+  obj = _isNil(obj) ? {} : obj;
 
-//   let current = obj;
-//   path = path.split(/\.+/);
-//   const last = path.length - 1;
-//   for (let i = 0; i < last; i++) {
-//     current = current[path[i]] = (current[path[i]] || {});
-//   }
+  let current = obj;
+  path = path.split(/\.+/);
+  const last = path.length - 1;
+  for (let i = 0; i < last; i++) {
+    current = current[path[i]] = (current[path[i]] || {});
+  }
 
-//   return current[path[last]] = value;
-// };
+  return current[path[last]] = value;
+};
 
 
 /**
@@ -56,4 +57,12 @@ module.exports._get = function(obj, path, _default) {
  */
 module.exports._forOwn = function(obj, fn) {
   Object.keys(obj).forEach(key => fn(obj[key], key, obj));
+};
+
+
+/**
+ *
+ */
+module.exports.testConflict = function(newPath, existingTree) {
+
 };
